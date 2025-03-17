@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель инструментов</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Добавляем пользовательские стили для иконок */
+    .icon {
+      width: 24px;
+      height: 24px;
+      background-color: white;
+      mask-size: cover;
+      -webkit-mask-size: cover;
+    }
+    .icon-bag { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>'); }
+    .icon-book { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 19h16v-2H4v2zm0-4h16v-2H4v2zm0-4h16V9H4v2zm0-6v2h16V5H4z"/></svg>'); }
+    .icon-list { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 10h16v2H4zm0 6h16v2H4zm0-6h16v2H4z"/></svg>'); }
+    .icon-globe { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>'); }
+    .icon-group { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm6 0c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></svg>'); }
+    .icon-trophy { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2L8 8h8l-4-6zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>'); }
+    .icon-chat { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 2H4v20l6-6h10V2zm-6 16H6v-2h8v2zm0-4H6v-2h8v2zm0-4H6V6h8v2z"/></svg>'); }
+    .icon-envelope { mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 4H4v16h16V4zm-8 12H6v-2h6v2zm0-4H6v-2h6v2zm0-4H6V6h6v2z"/></svg>'); }
+
+    /* Стиль для активного таба */
+    .active-tab {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-bottom: 2px solid #3b82f6;
+    }
+
+    /* Оверлей для модального окна */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 h-screen flex items-end justify-start p-4">
+
+  <!-- Панель инструментов -->
+  <div class="flex justify-between items-center bg-black bg-opacity-75 rounded-full p-2 w-96 relative">
+    <!-- Иконка рюкзака -->
+    <div class="icon icon-bag"></div>
+    <!-- Иконка книги -->
+    <div class="icon icon-book"></div>
+    <!-- Иконка списка -->
+    <div class="icon icon-list"></div>
+    <!-- Иконка глобуса -->
+    <div class="icon icon-globe"></div>
+    <!-- Иконка группы людей -->
+    <div class="icon icon-group"></div>
+    <!-- Иконка кубка -->
+    <div class="icon icon-trophy"></div>
+    <!-- Иконка облачка диалога (чат) -->
+    <div id="open-chat" class="icon icon-chat cursor-pointer"></div>
+    <!-- Иконка конверта (почта) с бейджем -->
+    <div class="relative">
+      <div id="open-mail" class="icon icon-envelope cursor-pointer"></div>
+      <!-- Бейдж с числом -->
+      <div class="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+        3
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно чата -->
+  <div id="chat-modal" class="hidden modal-overlay">
+    <div class="w-full max-w-md bg-gray-800 bg-opacity-90 rounded-2xl shadow-lg backdrop-blur-sm border border-gray-700 relative">
+      <!-- Кнопка закрытия -->
+      <button id="close-chat" class="absolute top-2 right-2 text-gray-400 hover:text-gray-200">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- Навбар (табы) -->
+      <nav class="flex justify-around p-4 border-b border-gray-700">
+        <button id="global-tab" class="text-white font-medium py-2 px-4 rounded-lg hover:bg-gray-700 hover:bg-opacity-50 active-tab" onclick="switchTab('global')">
+          Глобальный чат
+        </button>
+        <button id="clan-tab" class="text-white font-medium py-2 px-4 rounded-lg hover:bg-gray-700 hover:bg-opacity-50" onclick="switchTab('clan')">
+          Чат клана
+        </button>
+        <button id="private-tab" class="text-white font-medium py-2 px-4 rounded-lg hover:bg-gray-700 hover:bg-opacity-50" onclick="switchTab('private')">
+          Личные сообщения
+        </button>
+      </nav>
+
+      <!-- Контент табов -->
+      <div id="global-content" class="p-4 space-y-4 overflow-y-auto h-64">
+        <div class="flex items-end justify-end">
+          <div class="bg-blue-500 bg-opacity-80 text-white rounded-lg px-4 py-2 max-w-xs">
+            <p>Hello from Global Chat!</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="clan-content" class="hidden p-4 space-y-4 overflow-y-auto h-64">
+        <div class="flex items-end">
+          <div class="bg-green-500 bg-opacity-80 text-white rounded-lg px-4 py-2 max-w-xs">
+            <p>Welcome to Clan Chat!</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="private-content" class="hidden p-4 space-y-4 overflow-y-auto h-64">
+        <div class="flex items-end justify-end">
+          <div class="bg-purple-500 bg-opacity-80 text-white rounded-lg px-4 py-2 max-w-xs">
+            <p>This is a private message!</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Поле для ввода -->
+      <div class="mt-4 flex space-x-2 p-4 border-t border-gray-700">
+        <input type="text" placeholder="Type a message..." class="flex-1 bg-gray-700 bg-opacity-50 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        <button class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно почты -->
+  <div id="mail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white w-full max-w-6xl h-[80vh] rounded-lg overflow-hidden shadow-lg flex">
+      <!-- Левая часть: Навбар с письмами -->
+      <div class="w-1/4 bg-gray-200 p-4 overflow-y-auto">
+        <h2 class="text-lg font-semibold mb-4">Письма</h2>
+        <ul class="space-y-2">
+          <li>
+            <button onclick="selectTab(1)" class="block w-full px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 focus:outline-none focus:bg-gray-400">
+              Важное объявление
+            </button>
+          </li>
+          <li>
+            <button onclick="selectTab(2)" class="block w-full px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 focus:outline-none focus:bg-gray-400">
+              Предметы из квестов
+            </button>
+          </li>
+          <li>
+            <button onclick="selectTab(3)" class="block w-full px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 focus:outline-none focus:bg-gray-400">
+              Новый квест
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Правая часть: Контент письма -->
+      <div class="w-3/4 p-6 overflow-y-auto">
+        <!-- Первое письмо -->
+        <div id="tab1" class="hidden">
+          <h3 class="text-xl font-bold mb-4">Важное объявление</h3>
+          <p class="mb-4">
+            Уважаемые игроки, мы рады сообщить вам, что 35 мартабря наш игровой сервер не будет работать в течение минус 72 часов.
+            Да-да, вы не ослышались: минус 72 часа! Это значит, что сервер уже заработал раньше, чем вы успели прочитать это письмо.
+            Возможно, даже в прошлом году. Так что если вы заметили, что игра работает быстрее, чем обычно — это не баг, это фича!
+          </p>
+          <p>
+            Спасибо за понимание. И помните: время — это всего лишь число, особенно когда речь идет о наших серверах.
+          </p>
+        </div>
+
+        <!-- Второе письмо -->
+        <div id="tab2" class="hidden">
+          <h3 class="text-xl font-bold mb-4">Предметы из квестов</h3>
+          <p class="mb-4">
+            Поздравляем! Вы получили следующие предметы:
+          </p>
+          <ul class="list-disc pl-6 mb-4">
+            <li>100 биткоинов (курс которых, кстати, упал до уровня лапши быстрого приготовления).</li>
+            <li>Костюм Человека-паука (теперь вы можете лазить по стенам, но только в воображении).</li>
+          </ul>
+          <div class="flex space-x-4">
+            <button class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+              Принять
+            </button>
+            <button class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+              Принять и удалить письмо
+            </button>
+          </div>
+        </div>
+
+        <!-- Третье письмо -->
+        <div id="tab3" class="hidden">
+          <h3 class="text-xl font-bold mb-4">Новый квест: Айтишники vs Ассемблер</h3>
+          <p class="mb-4">
+            Дорогие участники! Пришло время показать, кто здесь настоящий программист. Мы запускаем новый квест:
+            "Соревнование айтишников в написании микропроцессоров на ассемблере". Звучит впечатляюще, правда? Особенно если учесть,
+            что большинство из вас даже не знает, что такое ассемблер.
+          </p>
+          <p class="mb-4">
+            Но не переживайте! Мы уверены, что вы справитесь. Ведь как говорится: "Если ты можешь написать 'Hello, World!', то ты можешь
+            написать всё!" Ну, или хотя бы попробовать.
+          </p>
+          <p>
+            Удачи! И помните: если ваш процессор перегреется, это не наша вина.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Функция для переключения табов в чате
+    function switchTab(tabName) {
+      document.querySelectorAll('nav button').forEach(button => {
+        button.classList.remove('active-tab');
+      });
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+      document.getElementById(`${tabName}-tab`).classList.add('active-tab');
+      document.getElementById(`${tabName}-content`).classList.remove('hidden');
+    }
+
+    // Открытие модального окна чата
+    document.getElementById('open-chat').addEventListener('click', () => {
+      document.getElementById('chat-modal').classList.remove('hidden');
+    });
+
+    // Закрытие модального окна чата
+    document.getElementById('close-chat').addEventListener('click', () => {
+      document.getElementById('chat-modal').classList.add('hidden');
+    });
+
+    // Закрытие модального окна чата при клике вне его области
+    document.getElementById('chat-modal').addEventListener('click', (event) => {
+      if (event.target.id === 'chat-modal') {
+        document.getElementById('chat-modal').classList.add('hidden');
+      }
+    });
+
+    // Инициализация первого таба чата как активного
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[id$="-content"]').forEach(content => {
+        content.classList.add('tab-content');
+      });
+      switchTab('global');
+    });
+
+    // Функция для открытия модального окна почты
+    document.getElementById('open-mail').addEventListener('click', () => {
+      document.getElementById('mail-modal').classList.remove('hidden');
+      selectTab(1); // По умолчанию открываем первое письмо
+    });
+
+    // Функция для закрытия модального окна почты
+    document.getElementById('mail-modal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('mail-modal')) {
+        document.getElementById('mail-modal').classList.add('hidden');
+      }
+    });
+
+    // Функция для переключения между письмами
+    function selectTab(tabNumber) {
+      // Скрываем все письма
+      document.querySelectorAll('[id^="tab"]').forEach(tab => tab.classList.add('hidden'));
+      // Показываем выбранное письмо
+      document.getElementById(`tab${tabNumber}`).classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
